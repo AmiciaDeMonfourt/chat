@@ -25,18 +25,16 @@ func init() {
 // Start runs the server at the address from .env file
 func Start() {
 	// define location for logging purposes
-	wd := "server.Start()"
-
 	addr := os.Getenv("APP_ADDR")
 	if addr == "" {
-		slog.Error("APP_ADDR environment is missing", "ctx", wd)
+		slog.Error("APP_ADDR environment is missing", "ctx", "server.Start()")
 		os.Exit(1)
 	}
 
 	slog.Info("Server is running", "address", addr)
 
 	if err := newServer().listenAndServe(addr); err != nil {
-		slog.Error(err.Error(), "ctx", wd)
+		slog.Error(err.Error(), "ctx", "server.Start()")
 		os.Exit(1)
 	}
 }
