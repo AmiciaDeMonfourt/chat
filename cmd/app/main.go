@@ -1,5 +1,7 @@
 package main
 
-func main() {
+import "pawpawchat/internal/server"
 
+func main() {
+	server.Start()
 }

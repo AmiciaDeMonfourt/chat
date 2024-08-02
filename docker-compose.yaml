@@ -1,0 +1,6 @@
+services:
+  app:
+    container_name: app
+    image: app:latest
+    ports:
+      - ${APP_PORT}:${APP_PORT}

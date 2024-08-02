@@ -1,6 +1,7 @@
 package server
 
 import (
+	"net/http"
 	"pawpawchat/internal/router"
 )
 
@@ -9,12 +10,14 @@ type server struct {
 }
 
 func newServer() *server {
+	router := router.New()
+	router.Configure()
+
 	return &server{
-		router: router.New(),
+		router: router,
 	}
 }
 
-func (s *server) ListenAndServe() error {
-	return nil
-	// http.ServeHTTP("", s.router)
+func (s *server) listenAndServe(addr string) error {
+	return http.ListenAndServe(addr, s.router)
 }

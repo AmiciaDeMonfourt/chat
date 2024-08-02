@@ -7,16 +7,19 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Router struct holds the mux router and the routes
+// Router struct holds the gorilla mux router and the routes struct
 type Router struct {
 	router *mux.Router
 	routes *routes.Routes
 }
 
 func New() *Router {
+	routes := routes.New()
+	routes.Configure()
+
 	return &Router{
 		router: mux.NewRouter(),
-		routes: routes.New(),
+		routes: routes,
 	}
 }
 

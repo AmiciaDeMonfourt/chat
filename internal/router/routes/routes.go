@@ -2,23 +2,25 @@ package routes
 
 import "net/http"
 
-// request handler func
-type HandleFunc func(http.ResponseWriter, *http.Request)
-
 type Routes struct {
-	routes map[string]HandleFunc
+	routes map[string]func(http.ResponseWriter, *http.Request)
 }
 
 func New() *Routes {
 	return &Routes{
-		routes: make(map[string]HandleFunc),
+		routes: make(map[string]func(http.ResponseWriter, *http.Request)),
 	}
 }
 
-func (r *Routes) GetRoutes() map[string]HandleFunc {
+func (r *Routes) GetRoutes() map[string]func(http.ResponseWriter, *http.Request) {
 	return r.routes
 }
 
 func (r *Routes) Configure() {
+	r.routes["/"] = TestFoo
+}
 
+func TestFoo(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("xui"))
 }
