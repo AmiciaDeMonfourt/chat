@@ -2,7 +2,6 @@ package routes
 
 import (
 	"net/http"
-	"pawpawchat/internal/producer"
 )
 
 type Routes struct {
@@ -20,9 +19,6 @@ func (r *Routes) GetRoutes() map[string]func(http.ResponseWriter, *http.Request)
 }
 
 func (r *Routes) Configure() {
-	kafkaProducer := producer.New()
-	_ = kafkaProducer
-
 	r.routes["/"] = TestFoo
 }
 

@@ -1,6 +1,7 @@
 package producer
 
 import (
+	"bytes"
 	"log/slog"
 	"os"
 
@@ -25,4 +26,19 @@ func New() *Producer {
 	return &Producer{
 		kafkaProducer: producer,
 	}
+}
+
+func (p *Producer) WriteAsync() error {
+	topic := "test-topic"
+
+	msg := &kafka.Message{
+		Value: bytes.NewBufferString("value").Bytes(),
+		Key:   bytes.NewBufferString("key").Bytes(),
+
+		TopicPartition: kafka.TopicPartition{
+			Topic: &topic,
+		},
+	}
+
+	return p.kafkaProducer.Produce(msg, nil)
 }

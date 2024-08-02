@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"pawpawchat/internal/consumer"
 
 	"github.com/joho/godotenv"
 )
@@ -32,6 +33,9 @@ func Start() {
 	}
 
 	slog.Info("Server is running", "address", addr)
+
+	c := consumer.New([]string{"test-topic"})
+	go c.Consume()
 
 	if err := newServer().listenAndServe(addr); err != nil {
 		slog.Error(err.Error(), "ctx", "server.Start()")
