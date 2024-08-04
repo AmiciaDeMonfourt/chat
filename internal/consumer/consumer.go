@@ -1,7 +1,6 @@
 package consumer
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 
@@ -16,6 +15,7 @@ func New(topics []string) *Consumer {
 	config := &kafka.ConfigMap{
 		"bootstrap.servers": "kafka:9092",
 		"group.id":          "lohi",
+		"auto.offset.reset": "earliest",
 	}
 
 	consumer, err := kafka.NewConsumer(config)
@@ -34,13 +34,16 @@ func New(topics []string) *Consumer {
 	}
 }
 
-func (c *Consumer) Consume() {
+func (c *Consumer) StartConsume() {
+	defer c.consumer.Close()
+	slog.Debug("start consume")
 	for {
-		kafkaEvent := c.consumer.Poll(100)
-
-		switch event := kafkaEvent.(type) {
+		ev := c.consumer.Poll(100)
+		switch e := ev.(type) {
 		case *kafka.Message:
-			fmt.Println(event.Value)
+			slog.Debug("Consume message", "topic", e.TopicPartition.Topic, "val", e.Value, "key", e.Key)
+		case kafka.Error:
+			slog.Debug(e.Error(), "ctx", "consumer.StartConsume()")
 		}
 	}
 }

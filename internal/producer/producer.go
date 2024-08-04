@@ -1,7 +1,6 @@
 package producer
 
 import (
-	"bytes"
 	"log/slog"
 	"os"
 
@@ -10,9 +9,10 @@ import (
 
 type Producer struct {
 	kafkaProducer *kafka.Producer
+	topic         *string
 }
 
-func New() *Producer {
+func New(topic string) *Producer {
 	config := &kafka.ConfigMap{
 		"bootstrap.servers": "kafka:9092",
 	}
@@ -25,19 +25,37 @@ func New() *Producer {
 
 	return &Producer{
 		kafkaProducer: producer,
+		topic:         &topic,
 	}
 }
 
-func (p *Producer) WriteAsync() error {
-	topic := "test-topic"
+func (p *Producer) StartProduce() {
+	defer p.kafkaProducer.Close()
+	for e := range p.kafkaProducer.Events() {
+		switch ev := e.(type) {
+		case *kafka.Message:
+			if ev.TopicPartition.Error != nil {
+				slog.Error(ev.TopicPartition.Error.Error(), "ctx", "producer.StartProduce()")
+				continue
+			}
 
+			slog.Debug("Sucessfully produced record",
+				"topic", *ev.TopicPartition.Topic,
+				"partition", ev.TopicPartition.Partition,
+				"offset", ev.TopicPartition.Offset,
+				"msg", string(ev.Value),
+			)
+		}
+	}
+}
+
+func (p *Producer) Write(key, value []byte) error {
 	msg := &kafka.Message{
-		Value: bytes.NewBufferString("value").Bytes(),
-		Key:   bytes.NewBufferString("key").Bytes(),
-
 		TopicPartition: kafka.TopicPartition{
-			Topic: &topic,
+			Topic: p.topic,
 		},
+		Key:   key,
+		Value: value,
 	}
 
 	return p.kafkaProducer.Produce(msg, nil)

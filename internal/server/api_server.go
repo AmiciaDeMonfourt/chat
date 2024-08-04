@@ -32,10 +32,13 @@ func Start() {
 		os.Exit(1)
 	}
 
-	slog.Info("Server is running", "address", addr)
+	slog.SetLogLoggerLevel(slog.LevelDebug)
 
-	c := consumer.New([]string{"test-topic"})
-	go c.Consume()
+	// initialize consumer
+	consumer := consumer.New([]string{"test-topic"})
+	go consumer.StartConsume()
+
+	slog.Info("Server is running", "address", addr)
 
 	if err := newServer().listenAndServe(addr); err != nil {
 		slog.Error(err.Error(), "ctx", "server.Start()")

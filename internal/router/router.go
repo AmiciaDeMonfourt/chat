@@ -31,8 +31,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // Configure sets up the router by registering all routes and their handlers
 func (r *Router) Configure() {
 	// iterate over all routes and handlers
-	for path, handleFunc := range r.routes.GetRoutes() {
+	for _, route := range r.routes.GetRoutes() {
 		// register each route and its handler
-		r.router.HandleFunc(path, handleFunc)
+		r.router.HandleFunc(route.Path, route.Handler).Methods(route.Method)
 	}
 }
