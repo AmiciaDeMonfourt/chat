@@ -5,6 +5,30 @@ services:
     ports:
       - ${APP_PORT}:${APP_PORT}
 
+
+  auth:
+    container_name: auth
+    image: auth:latest
+    build:
+      dockerfile: pkg/auth/dockerfile
+    environment:
+      - AUTH_DB_URL=${AUTH_DB_URL}
+    ports:
+      - ${AUTH_PORT}:${AUTH_PORT}
+    depends_on:
+      - auth_db
+
+  auth_db:
+    container_name: auth_db
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=${PG_USER}
+      - POSTGRES_PASSWORD=${PG_PASS}
+      - POSTGRES_DB=${AUTH_DB}
+    volumes:
+      - authdb_data:/var/lib/postgresql/data
+
+
   kafka:
     image: confluentinc/cp-kafka:latest
     container_name: kafka-broker
@@ -18,6 +42,7 @@ services:
       - zookeeper
   
   zookeeper:
+    container_name: zookeepeer
     image: confluentinc/cp-zookeeper:latest
     ports:
       - ${ZOOKEEPER_PORT}:${ZOOKEEPER_PORT}
@@ -29,3 +54,4 @@ services:
 
 volumes:
   zookeeper_data:
+  authdb_data:

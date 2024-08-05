@@ -1,16 +1,18 @@
 package routes
 
-import "pawpawchat/internal/router/routes/auth"
+import (
+	"pawpawchat/internal/router/routes/authroutes"
+)
 
 type Routes struct {
 	routes     []Route
-	authRoutes auth.AuthRoutes
+	authRoutes *authroutes.AuthRoutes
 }
 
 func New() *Routes {
 	return &Routes{
 		routes:     make([]Route, 0),
-		authRoutes: auth.NewAuthRoutes(),
+		authRoutes: authroutes.NewAuthRoutes(),
 	}
 }
 

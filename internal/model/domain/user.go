@@ -1,4 +1,4 @@
-package user
+package domain
 
 type User struct {
 	ID         int64  `json:"id"`
@@ -8,7 +8,7 @@ type User struct {
 	// email ???
 }
 
-func New(id int64, firstname, secondname string) User {
+func NewUser(id int64, firstname, secondname string) User {
 	return User{
 		ID:         id,
 		FirstName:  firstname,

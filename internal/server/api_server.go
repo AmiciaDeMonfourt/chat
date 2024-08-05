@@ -28,7 +28,7 @@ func Start() {
 	// define location for logging purposes
 	addr := os.Getenv("APP_ADDR")
 	if addr == "" {
-		slog.Error("APP_ADDR environment is missing", "ctx", "server.Start()")
+		slog.Error("APP_ADDR environment is missing")
 		os.Exit(1)
 	}
 

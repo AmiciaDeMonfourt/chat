@@ -1,6 +1,6 @@
 package auth
 
-import "pawpawchat/internal/model/domain/user"
+import "pawpawchat/internal/model/domain"
 
 type SignUpRequest struct {
 	FirstName  string `json:"first_name"`
@@ -10,6 +10,6 @@ type SignUpRequest struct {
 }
 
 type SignUpResponse struct {
-	User  user.User `json:"user"`
-	Token string    `json:"token_string"`
+	User  domain.User `json:"user"`
+	Token string      `json:"token_string"`
 }

@@ -1,17 +1,21 @@
-package auth
+package authroutes
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
-	"pawpawchat/internal/model/domain/user"
+	"pawpawchat/generated/proto/authpb"
+	"pawpawchat/internal/model/domain"
 	"pawpawchat/internal/model/web/auth"
-	"pawpawchat/internal/producer"
-	"pawpawchat/utils/jwt"
 	"pawpawchat/utils/response"
+	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-func (r *AuthRoutesImpl) SignUp(w http.ResponseWriter, req *http.Request) {
+func (r *AuthRoutes) SignUp(w http.ResponseWriter, req *http.Request) {
 	signUpRequest := &auth.SignUpRequest{}
 
 	// decode http request body
@@ -26,43 +30,36 @@ func (r *AuthRoutesImpl) SignUp(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// created user logic (refactor [add record at the database])
-	newUser := user.New(1, signUpRequest.FirstName, signUpRequest.SecondName)
+	// create new record in database
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
 
-	// write new record to the topic
-	if err := writeToTopic(r.producer, newUser); err != nil {
-		response.InternalErr(w, err.Error())
-		return
-	}
+	authreq := &authpb.SignUpRequest{Email: signUpRequest.Email, Password: signUpRequest.Password}
 
-	// generated jwt token
-	token, err := jwt.GenerateToken(newUser.ID)
+	authresp, err := r.authClient.SignUp(ctx, authreq)
+
 	if err != nil {
-		response.InternalErr(w, err.Error())
-		return
+		st := status.Convert(err)
+
+		switch st.Code() {
+		case codes.InvalidArgument:
+			response.BadReq(w, st.Err().Error())
+			return
+		default:
+			response.InternalErr(w, st.Err().Error())
+			return
+		}
 	}
 
-	// http response
 	signUpResponse := &auth.SignUpResponse{
-		User:  newUser,
-		Token: token,
+		User: domain.User{
+			ID:         authresp.User.GetId(),
+			FirstName:  authresp.User.GetFirstName(),
+			SecondName: authresp.User.GetSecondName()},
+		Token: authresp.GetTokenString(),
 	}
 
 	response.Created(w, signUpResponse)
-}
-
-func writeToTopic(producer *producer.Producer, newUser user.User) error {
-	value, err := json.Marshal(newUser)
-	if err != nil {
-		return err
-	}
-
-	key, err := json.Marshal(newUser.ID)
-	if err != nil {
-		return err
-	}
-
-	return producer.Write(value, key)
 }
 
 func checkCredentials(req auth.SignUpRequest) error {

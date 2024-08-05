@@ -6,6 +6,6 @@ COPY . .
 RUN go mod tidy
 RUN go build -o main ./cmd/app/main.go
 
-EXPOSE ${APP_PORT}
+EXPOSE ${AUTH_PORT}
 CMD [ "./main" ]
 
