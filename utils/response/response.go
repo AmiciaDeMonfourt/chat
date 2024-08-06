@@ -10,12 +10,6 @@ type HTTPError struct {
 	Error string `json:"error"`
 }
 
-type gRPCError struct {
-	Code    string `json:"code"`
-	Reason  string `json:"reason"`
-	Message string `json:"msg"`
-}
-
 func jsonResponse(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)

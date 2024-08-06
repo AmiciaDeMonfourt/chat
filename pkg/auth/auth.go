@@ -21,23 +21,31 @@ func init() {
 	if err := godotenv.Load(wd + "/.env"); err != nil {
 		log.Fatal(err)
 	}
+
+	if os.Getenv("AUTH_ADDR") == "" {
+		log.Fatal("auth -> AUTH_ADDR is missing")
+
+	} else if os.Getenv("AUTH_DB_URL") == "" {
+		log.Fatal("auth -> AUTH_DB_URL is missing")
+
+	} else if os.Getenv("PROFILE_EXTERNAL_ADDR") == "" {
+		log.Fatal("auth -> PROFILE_EXTERNAL_ADDR is missing")
+	}
+
 }
 
 func Start() {
-	addr := os.Getenv("AUTH_ADDR")
-	if addr == "" {
-		log.Fatal("AUTH_ADDR is missing")
-	}
-
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		log.Fatalf("failed to create a listener: " + err.Error())
-	}
-
 	srv := grpc.NewServer()
 	authpb.RegisterAuthServer(srv, server.New())
 
-	slog.Info("auth service is started")
+	listener, err := net.Listen("tcp", os.Getenv("AUTH_ADDR"))
+	if err != nil {
+		log.Fatalf("auth -> failed to create a listener: " + err.Error())
+	}
 
-	srv.Serve(listener)
+	slog.Info("auth -> server is running", "addr", os.Getenv("AUTH_ADDR"))
+
+	if err := srv.Serve(listener); err != nil {
+		log.Fatal("auth -> server error:", err.Error())
+	}
 }

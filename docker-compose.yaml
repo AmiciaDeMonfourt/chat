@@ -5,6 +5,28 @@ services:
     ports:
       - ${APP_PORT}:${APP_PORT}
 
+  profile:
+    container_name: profile
+    image: profile:latest
+    build:
+      dockerfile: pkg/profile/dockerfile
+    environment:
+      - PROFILE_DB_URL=${PROFILE_DB_URL}
+    ports:
+      - ${PROFILE_PORT}:${PROFILE_PORT}
+    depends_on:
+      - profile_db
+  
+  profile_db:
+    container_name: profile_db
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=${PG_USER}
+      - POSTGRES_PASSWORD=${PG_PASS}
+      - POSTGRES_DB=${PROFILE_DB}
+    volumes:
+      - profiledb_data:/var/lib/postgresql/data
+
 
   auth:
     container_name: auth
@@ -55,3 +77,4 @@ services:
 volumes:
   zookeeper_data:
   authdb_data:
+  profiledb_data:

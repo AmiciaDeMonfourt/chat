@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"pawpawchat/pkg/auth/model"
+	"pawpawchat/internal/model/domain"
 
 	"gorm.io/gorm"
 )
@@ -17,10 +17,14 @@ func NewPosgresDB(db *gorm.DB) Database {
 	}
 }
 
-func (p *PostgresDB) InsertUserCredentials(ctx context.Context, cr *model.UserCredentials) error {
-	return p.db.WithContext(ctx).Create(cr).Error
+func (p *PostgresDB) InsertUserCredentials(ctx context.Context, tx *gorm.DB, cr *domain.UserCredentials) error {
+	return tx.WithContext(ctx).Create(cr).Error
 }
 
-func (p *PostgresDB) CheckUserCredentials(ctx context.Context, cr *model.UserCredentials) error {
+func (p *PostgresDB) CheckUserCredentials(ctx context.Context, cr *domain.UserCredentials) error {
 	return p.db.WithContext(ctx).Where(cr).First(nil).Error
+}
+
+func (p *PostgresDB) Begin() *gorm.DB {
+	return p.db.Begin()
 }

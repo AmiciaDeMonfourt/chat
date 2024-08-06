@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package profile;
+
+option go_package = "generated/proto/profilepb";
+
+service Profile {
+    rpc Create(CreateRequest) returns (CreateResponse);
+}
+
+message UserPersonalInfo {
+    string firstname  = 1;
+    string secondname = 2;     
+}
+
+message User {
+    int64            userid = 1;
+    UserPersonalInfo userinfo = 2;
+}
+
+message CreateRequest{
+    UserPersonalInfo userinfo = 1;
+}
+
+message CreateResponse {
+    User user = 1;
+}
+

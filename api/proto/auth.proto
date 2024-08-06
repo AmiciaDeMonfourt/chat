@@ -9,15 +9,25 @@ service Auth {
 }
 
 message User {
-    int64  id         = 1;
-    string firstName  = 2;
-    string secondName = 3;
-    string email      = 4;
+    int64        id          = 1;
+    PersonalInfo userinfo    = 2;
+    Credentials  credentials = 3;
 }
 
-message SignUpRequest {
+message PersonalInfo {
+    string firstname  = 2;
+    string secondname = 3;
+}
+
+message Credentials {
     string email    = 1;
     string password = 2;
+}
+
+
+message SignUpRequest {
+    Credentials credentials = 1;
+    PersonalInfo userinfo    = 2;
 }
 
 message SignUpResponse {
@@ -25,9 +35,9 @@ message SignUpResponse {
     string tokenString = 2;
 }
 
+
 message SignInRequest {
-    string email    = 1;
-    string password = 2;
+    Credentials credentials = 1;
 }
 
 message SignInResponse {

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"pawpawchat/generated/proto/authpb"
 	"pawpawchat/internal/model/domain"
-	"pawpawchat/internal/model/web/auth"
+	web "pawpawchat/internal/model/web/auth"
 	"pawpawchat/utils/response"
 	"time"
 
@@ -16,28 +16,33 @@ import (
 )
 
 func (r *AuthRoutes) SignUp(w http.ResponseWriter, req *http.Request) {
-	signUpRequest := &auth.SignUpRequest{}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
 
-	// decode http request body
+	signUpRequest := &web.SignUpRequest{}
 	if err := json.NewDecoder(req.Body).Decode(signUpRequest); err != nil {
 		response.BadReq(w, err.Error())
 		return
 	}
 
-	// verify sign up request credentials
-	if err := checkCredentials(*signUpRequest); err != nil {
+	if err := checkCredentials(*signUpRequest); err != nil { // verify sign up request credentials
 		response.BadReq(w, err.Error())
 		return
 	}
 
-	// create new record in database
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
-	authreq := &authpb.SignUpRequest{Email: signUpRequest.Email, Password: signUpRequest.Password}
-
+	authreq := &authpb.SignUpRequest{
+		Credentials: &authpb.Credentials{
+			Email:    signUpRequest.Email,
+			Password: signUpRequest.Password,
+		},
+		Userinfo: &authpb.PersonalInfo{
+			Firstname:  signUpRequest.FirstName,
+			Secondname: signUpRequest.SecondName,
+		},
+	}
 	authresp, err := r.authClient.SignUp(ctx, authreq)
 
+	// REFACTOR
 	if err != nil {
 		st := status.Convert(err)
 
@@ -51,18 +56,27 @@ func (r *AuthRoutes) SignUp(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	signUpResponse := &auth.SignUpResponse{
+	signUpResponse := &web.SignUpResponse{
 		User: domain.User{
-			ID:         authresp.User.GetId(),
-			FirstName:  authresp.User.GetFirstName(),
-			SecondName: authresp.User.GetSecondName()},
+			UserID: authresp.GetUser().GetId(),
+			PersonalInfo: domain.UserPersonalInfo{
+				UserID:     authresp.GetUser().GetId(),
+				FirstName:  authresp.GetUser().GetUserinfo().GetFirstname(),
+				SecondName: authresp.GetUser().GetUserinfo().GetSecondname(),
+			},
+			Credentials: domain.UserCredentials{
+				UserID:   authresp.GetUser().GetId(),
+				Email:    authresp.GetUser().GetCredentials().GetEmail(),
+				Password: authreq.GetCredentials().GetPassword(),
+			},
+		},
 		Token: authresp.GetTokenString(),
 	}
 
 	response.Created(w, signUpResponse)
 }
 
-func checkCredentials(req auth.SignUpRequest) error {
+func checkCredentials(req web.SignUpRequest) error {
 	if req.Email == "" {
 		return errors.New("email is missing")
 	}
