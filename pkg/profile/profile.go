@@ -1,71 +1,47 @@
 package profile
 
 import (
-	"flag"
 	"log"
 	"log/slog"
 	"net"
+	"pawpawchat/config"
 	"pawpawchat/generated/proto/profilepb"
-	"pawpawchat/internal/model/domain"
-	"pawpawchat/pkg/profile/config"
-	"pawpawchat/pkg/profile/database"
+	"pawpawchat/pkg/profile/profiledb"
 	"pawpawchat/pkg/profile/server"
 
 	"google.golang.org/grpc"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
+// Start ...
 func Start() {
-	env := flag.String("env", "dev", "Environment to use [dev/test]")
-	flag.Parse()
+	config, envConfig := config.GetConfiguration("config.yaml")
+	profiledb := openProfileDB(envConfig.ProfileEnvCfg().DBURL)
 
-	cfg := config.New(*env)
-	db := sqldDbConn(cfg)
-
-	gRPCServer := createServer(db)
-
-	slog.Info("server is running", "addr", cfg.Addr)
-
-	if err := gRPCServer.Serve(createListener(cfg)); err != nil {
-		log.Fatal("profile -> server error:", err.Error())
-	}
+	runGRPCServer(config.Profile, profiledb)
 }
 
-func sqldDbConn(cfg *config.ProfileConfig) *gorm.DB {
-	var level logger.LogLevel
-	if cfg.LogLevel == "info" {
-		level = logger.Info
-	} else {
-		level = logger.Error
-	}
-
-	db, err := gorm.Open(postgres.Open(cfg.DBURL), &gorm.Config{
-		Logger: logger.Default.LogMode(level),
-	})
+// openAuthDB ...
+func openProfileDB(dsn string) profiledb.Database {
+	database, err := profiledb.OpenPostgres(dsn)
 	if err != nil {
-		log.Fatal("failed to connect to db:", err.Error())
+		log.Fatal(err)
 	}
-
-	if err := db.AutoMigrate(domain.UserBiography{}); err != nil {
-		log.Fatal("failed to run migrations:", err.Error())
-	}
-	return db
+	slog.Debug("connection with ppc_profile", "dsn", dsn)
+	return database
 }
 
-func createServer(db *gorm.DB) *grpc.Server {
-	profileServer := server.New(database.NewPostgresDB(db))
-	gRPCServer := grpc.NewServer()
+// runGRPCServer ...
+func runGRPCServer(cfg config.ServiceConfig, db profiledb.Database) {
+	gRPSServer := grpc.NewServer()
+	profilepb.RegisterProfileServer(gRPSServer, server.New(db))
 
-	profilepb.RegisterProfileServer(gRPCServer, profileServer)
-	return gRPCServer
-}
-
-func createListener(cfg *config.ProfileConfig) net.Listener {
 	listener, err := net.Listen("tcp", cfg.Addr)
 	if err != nil {
-		log.Fatal("failed to create listener:", err.Error())
+		log.Fatal(err)
 	}
-	return listener
+
+	slog.Debug("grpc server is running", "addr", cfg.Addr)
+	if err := gRPSServer.Serve(listener); err != nil {
+		log.Fatal(err)
+	}
 }

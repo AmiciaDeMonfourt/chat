@@ -4,56 +4,57 @@ import (
 	"log"
 	"log/slog"
 	"net"
+	"pawpawchat/config"
 	"pawpawchat/generated/proto/authpb"
 	"pawpawchat/generated/proto/profilepb"
-	"pawpawchat/internal/model/domain"
-	"pawpawchat/pkg/auth/config"
-	"pawpawchat/pkg/auth/database"
+	"pawpawchat/pkg/auth/authdb"
 	"pawpawchat/pkg/auth/server"
+	"pawpawchat/pkg/profile"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
+// Start ...
 func Start() {
-	cfg := config.New()
+	config, envConfig := config.GetConfiguration("config.yaml")
+	db := openAuthDB(envConfig.AuthEnvCfg().DBURL)
 
-	srv := grpc.NewServer()
-	authpb.RegisterAuthServer(srv, server.New(authdb(cfg), profileclient(cfg)))
-
-	listener, err := net.Listen("tcp", cfg.Addr)
-	if err != nil {
-		log.Fatalf("auth -> failed to create a listener: " + err.Error())
-	}
-
-	slog.Info("auth -> server is running", "addr", cfg.Addr)
-
-	if err := srv.Serve(listener); err != nil {
-		log.Fatal("auth -> server error:", err.Error())
-	}
+	profileClient := newProfileClient(envConfig.ProfileEnvCfg().ExtAddr)
+	runGRPCServer(config, db, profileClient)
 }
 
-func authdb(cfg *config.AuthConfig) database.Database {
-	db, err := gorm.Open(postgres.Open(cfg.DBURL))
+// openAuthDB ...
+func openAuthDB(dsn string) authdb.Database {
+	database, err := authdb.OpenPostgres(dsn)
 	if err != nil {
-		log.Fatal("failed to connect to db:", err.Error())
+		log.Fatal(err)
 	}
-
-	if err := db.AutoMigrate(domain.UserCredentials{}); err != nil {
-		log.Fatal("failed to run migrations:", err.Error())
-	}
-
-	return database.NewPosgresDB(db)
+	slog.Debug("connection with ppc_authdb", "addr", dsn)
+	return database
 }
 
-func profileclient(cfg *config.AuthConfig) profilepb.ProfileClient {
-	conn, err := grpc.NewClient(cfg.ProfileAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+// newProfileClient ...
+func newProfileClient(profileGRPSServerAddr string) profilepb.ProfileClient {
+	client, err := profile.NewClient(profileGRPSServerAddr)
 	if err != nil {
-		log.Fatal("auth -> failed to connection to profile grpc server:", err.Error())
+		log.Fatal(err)
+	}
+	slog.Debug("initialize profile client", "addr", profileGRPSServerAddr)
+	return client
+}
+
+// runGRPCServer ...
+func runGRPCServer(cfg *config.Config, db authdb.Database, pc profilepb.ProfileClient) {
+	gRPSServer := grpc.NewServer()
+	authpb.RegisterAuthServer(gRPSServer, server.New(db, pc))
+
+	listener, err := net.Listen("tcp", cfg.Auth.Addr)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	slog.Info("profile client ina auth service", "addr", cfg.ProfileAddr)
-	return profilepb.NewProfileClient(conn)
+	slog.Debug("grpc server is running", "addr", cfg.Auth.Addr)
+	if err := gRPSServer.Serve(listener); err != nil {
+		log.Fatal(err)
+	}
 }

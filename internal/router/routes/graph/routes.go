@@ -6,7 +6,7 @@ import (
 	"pawpawchat/generated/graphgen"
 	"pawpawchat/internal/router"
 	"pawpawchat/internal/router/routes"
-	profile "pawpawchat/pkg/profile/database"
+	"pawpawchat/pkg/profile/profiledb"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -14,10 +14,10 @@ import (
 
 type GraphRoutes struct {
 	routes []routes.RouteInfo
-	prdb   profile.Database
+	prdb   profiledb.Database
 }
 
-func NewRoutes(prdb profile.Database) routes.Routes {
+func NewRoutes(prdb profiledb.Database) routes.Routes {
 	gr := &GraphRoutes{
 		routes: make([]routes.RouteInfo, 0),
 		prdb:   prdb,

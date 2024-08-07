@@ -15,10 +15,10 @@ services:
     ports:
       - ${PROFILE_PORT}:${PROFILE_PORT}
     depends_on:
-      - profile_db
+      - profiledb
   
-  profile_db:
-    container_name: profile_db
+  profiledb:
+    container_name: profiledb
     image: postgres:latest
     environment:
       - POSTGRES_USER=${PG_USER}
@@ -38,10 +38,10 @@ services:
     ports:
       - ${AUTH_PORT}:${AUTH_PORT}
     depends_on:
-      - auth_db
+      - authdb
 
-  auth_db:
-    container_name: auth_db
+  authdb:
+    container_name: authdb
     image: postgres:latest
     environment:
       - POSTGRES_USER=${PG_USER}

@@ -5,15 +5,15 @@ import (
 	"log/slog"
 	pb "pawpawchat/generated/proto/profilepb"
 	"pawpawchat/internal/model/domain"
-	"pawpawchat/pkg/profile/database"
+	"pawpawchat/pkg/profile/profiledb"
 )
 
 type ProfileServer struct {
 	pb.UnimplementedProfileServer
-	db database.Database
+	db profiledb.Database
 }
 
-func New(db database.Database) *ProfileServer {
+func New(db profiledb.Database) *ProfileServer {
 	return &ProfileServer{db: db}
 }
 

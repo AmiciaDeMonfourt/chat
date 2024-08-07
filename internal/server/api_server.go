@@ -1,69 +1,59 @@
 package server
 
 import (
-	"flag"
 	"log"
 	"log/slog"
+	"pawpawchat/config"
 	"pawpawchat/generated/proto/authpb"
-	"pawpawchat/internal/config"
 	"pawpawchat/internal/router"
-	"pawpawchat/internal/router/middleware"
 	"pawpawchat/internal/router/routes"
-	profile "pawpawchat/pkg/profile/database"
-
-	"pawpawchat/internal/router/routes/auth"
 	"pawpawchat/internal/router/routes/graph"
+	"pawpawchat/pkg/profile/profiledb"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	authroutes "pawpawchat/internal/router/routes/auth"
+	authsrv "pawpawchat/pkg/auth/server"
 )
 
 func Start() {
-	env := flag.String("env", "dev", "environment [dev/test]")
-	flag.Parse()
-	cfg := config.New(*env)
+	config, envConfig := config.GetConfiguration("config.yaml")
+	router := newConfiguratedRouter(envConfig)
 
-	httpRouter := router.New()
+	runHTPPServer(router, config.App.Addr)
+}
 
-	rmap := []routes.Routes{
-		graph.NewRoutes(profile.NewPostgresDB(prdbconn(cfg))),
-		auth.NewRoutes(authclient(cfg)),
+func runHTPPServer(router router.Router, addr string) {
+	newServer(router).listenAndServe(addr)
+}
+
+func newConfiguratedRouter(envConfig config.EnvConfigurationProvider) router.Router {
+	profiledb := openProfileDB(envConfig.ProfileEnvCfg().DBURL)
+	authClient := newAuthClient(envConfig.AuthEnvCfg().ExtAddr)
+
+	routesmap := []routes.Routes{
+		graph.NewRoutes(profiledb),
+		authroutes.NewRoutes(authClient),
 	}
 
-	httpRouter.Use(middleware.CORS, middleware.Log)
-	routes.RegisterRoutes(httpRouter, rmap)
+	router := router.New()
+	routes.RegisterRoutes(router, routesmap)
+	return router
+}
 
-	slog.Debug("server is running", "address", cfg.Addr)
-	if err := newServer(httpRouter).listenAndServe(cfg.Addr); err != nil {
+// openAuthDB ...
+func openProfileDB(dsn string) profiledb.Database {
+	database, err := profiledb.OpenPostgres(dsn)
+	if err != nil {
 		log.Fatal(err)
 	}
+	slog.Debug("connection with ppc_profile", "dsn", dsn)
+	return database
 }
 
-func prdbconn(cfg *config.AppConfig) *gorm.DB {
-	var level logger.LogLevel
-	if cfg.LogLevel == "info" {
-		level = logger.Info
-	} else {
-		level = logger.Error
-	}
-
-	prdb, err := gorm.Open(postgres.Open(cfg.ProfileDBURL), &gorm.Config{Logger: logger.Default.LogMode(level)})
-	if err != nil {
-		log.Fatal("profile database:", err)
-	}
-
-	return prdb
-}
-
-func authclient(cfg *config.AppConfig) authpb.AuthClient {
-	conn, err := grpc.NewClient(cfg.AuthAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func newAuthClient(authGRPCServerAddr string) authpb.AuthClient {
+	client, err := authsrv.NewClient(authGRPCServerAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	slog.Debug("new auth client in app:", "addr", cfg.AuthAddr)
-	return authpb.NewAuthClient(conn)
+	return client
 }

@@ -1,7 +1,7 @@
 package resolvers
 
-import "pawpawchat/pkg/profile/database"
+import "pawpawchat/pkg/profile/profiledb"
 
 type Resolver struct {
-	Profiledb database.Database
+	Profiledb profiledb.Database
 }
