@@ -18,12 +18,17 @@ func New(db database.Database) *ProfileServer {
 }
 
 func (s *ProfileServer) Create(ctx context.Context, req *pb.CreateRequest) (*pb.CreateResponse, error) {
-	userinfo := &domain.UserPersonalInfo{
-		FirstName:  req.GetUserinfo().GetFirstname(),
-		SecondName: req.GetUserinfo().GetSecondname(),
+	userinfo := &domain.UserBiography{
+		FirstName:  req.GetUserbio().GetFirstname(),
+		SecondName: req.GetUserbio().GetSecondname(),
 	}
 
-	user, err := s.db.CreateProfile(ctx, userinfo)
+	_, err := s.db.CreateProfile(ctx, userinfo)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := s.db.GetProfileByID(ctx, uint64(userinfo.UserID))
 	if err != nil {
 		return nil, err
 	}
@@ -31,9 +36,9 @@ func (s *ProfileServer) Create(ctx context.Context, req *pb.CreateRequest) (*pb.
 	resp := &pb.CreateResponse{
 		User: &pb.User{
 			Userid: userinfo.UserID,
-			Userinfo: &pb.UserPersonalInfo{
-				Firstname:  user.PersonalInfo.FirstName,
-				Secondname: user.PersonalInfo.SecondName,
+			Userbio: &pb.UserBiography{
+				Firstname:  user.Biography.FirstName,
+				Secondname: user.Biography.SecondName,
 			},
 		},
 	}

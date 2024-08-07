@@ -1,47 +1,69 @@
 package server
 
 import (
+	"flag"
 	"log"
 	"log/slog"
-	"os"
-	"path/filepath"
-	"pawpawchat/internal/consumer"
+	"pawpawchat/generated/proto/authpb"
+	"pawpawchat/internal/config"
+	"pawpawchat/internal/router"
+	"pawpawchat/internal/router/middleware"
+	"pawpawchat/internal/router/routes"
+	profile "pawpawchat/pkg/profile/database"
 
-	"github.com/joho/godotenv"
+	"pawpawchat/internal/router/routes/auth"
+	"pawpawchat/internal/router/routes/graph"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-// init loads .env file which is located in the project root
-func init() {
-	wd, err := os.Getwd()
+func Start() {
+	env := flag.String("env", "dev", "environment [dev/test]")
+	flag.Parse()
+	cfg := config.New(*env)
+
+	httpRouter := router.New()
+
+	rmap := []routes.Routes{
+		graph.NewRoutes(profile.NewPostgresDB(prdbconn(cfg))),
+		auth.NewRoutes(authclient(cfg)),
+	}
+
+	httpRouter.Use(middleware.CORS, middleware.Log)
+	routes.RegisterRoutes(httpRouter, rmap)
+
+	slog.Debug("server is running", "address", cfg.Addr)
+	if err := newServer(httpRouter).listenAndServe(cfg.Addr); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func prdbconn(cfg *config.AppConfig) *gorm.DB {
+	var level logger.LogLevel
+	if cfg.LogLevel == "info" {
+		level = logger.Info
+	} else {
+		level = logger.Error
+	}
+
+	prdb, err := gorm.Open(postgres.Open(cfg.ProfileDBURL), &gorm.Config{Logger: logger.Default.LogMode(level)})
+	if err != nil {
+		log.Fatal("profile database:", err)
+	}
+
+	return prdb
+}
+
+func authclient(cfg *config.AppConfig) authpb.AuthClient {
+	conn, err := grpc.NewClient(cfg.AuthAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = godotenv.Load(filepath.Join(wd, ".env"))
-	if err != nil {
-		log.Fatal("Error loading .env file:", err)
-	}
-}
-
-// Start runs the server at the address from .env file
-func Start() {
-	// define location for logging purposes
-	addr := os.Getenv("APP_ADDR")
-	if addr == "" {
-		slog.Error("APP_ADDR environment is missing")
-		os.Exit(1)
-	}
-
-	slog.SetLogLoggerLevel(slog.LevelDebug)
-
-	// initialize consumer
-	consumer := consumer.New([]string{"test-topic"})
-	go consumer.StartConsume()
-
-	slog.Info("Server is running", "address", addr)
-
-	if err := newServer().listenAndServe(addr); err != nil {
-		slog.Error(err.Error(), "ctx", "server.Start()")
-		os.Exit(1)
-	}
+	slog.Debug("new auth client in app:", "addr", cfg.AuthAddr)
+	return authpb.NewAuthClient(conn)
 }

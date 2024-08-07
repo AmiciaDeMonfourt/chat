@@ -1,4 +1,4 @@
-package authroutes
+package auth
 
 import (
 	"context"
@@ -35,7 +35,7 @@ func (r *AuthRoutes) SignUp(w http.ResponseWriter, req *http.Request) {
 			Email:    signUpRequest.Email,
 			Password: signUpRequest.Password,
 		},
-		Userinfo: &authpb.PersonalInfo{
+		Userinfo: &authpb.Biography{
 			Firstname:  signUpRequest.FirstName,
 			Secondname: signUpRequest.SecondName,
 		},
@@ -57,19 +57,7 @@ func (r *AuthRoutes) SignUp(w http.ResponseWriter, req *http.Request) {
 	}
 
 	signUpResponse := &web.SignUpResponse{
-		User: domain.User{
-			UserID: authresp.GetUser().GetId(),
-			PersonalInfo: domain.UserPersonalInfo{
-				UserID:     authresp.GetUser().GetId(),
-				FirstName:  authresp.GetUser().GetUserinfo().GetFirstname(),
-				SecondName: authresp.GetUser().GetUserinfo().GetSecondname(),
-			},
-			Credentials: domain.UserCredentials{
-				UserID:   authresp.GetUser().GetId(),
-				Email:    authresp.GetUser().GetCredentials().GetEmail(),
-				Password: authreq.GetCredentials().GetPassword(),
-			},
-		},
+		User:  domain.NewUser(authresp),
 		Token: authresp.GetTokenString(),
 	}
 

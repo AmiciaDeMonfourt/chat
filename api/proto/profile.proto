@@ -6,23 +6,33 @@ option go_package = "generated/proto/profilepb";
 
 service Profile {
     rpc Create(CreateRequest) returns (CreateResponse);
+    rpc GetByID(GetByIDRequest) returns (GetByIDResponse);
 }
 
-message UserPersonalInfo {
+message UserBiography {
     string firstname  = 1;
     string secondname = 2;     
 }
 
 message User {
-    int64            userid = 1;
-    UserPersonalInfo userinfo = 2;
+    int64         userid = 1;
+    UserBiography userbio = 2;
 }
 
+
 message CreateRequest{
-    UserPersonalInfo userinfo = 1;
+    UserBiography userbio = 1;
 }
 
 message CreateResponse {
     User user = 1;
 }
 
+
+message GetByIDRequest{
+    int64 id = 1;
+}
+
+message GetByIDResponse {
+    User user = 1;
+}

@@ -1,0 +1,29 @@
+log_level: debug
+
+app:
+  dev:
+    addr: ${APP_HOST}:${APP_PORT}
+    auth_addr: ${AUTH_EXTERNAL_ADDR}
+    profiledb_url: ${PROFILE_DB_URL} 
+  test:
+    addr: localhost:${APP_PORT}
+    auth_addr: localhost:${AUTH_PORT}
+    profiledb_url: "postgres://${PG_USER}:${PG_PASS}@$localhost:${PROFILE_DB_PORT}/${PROFILE_DB}?sslmode=disable"
+
+profile:
+  dev:
+    addr: ${PROFILE_HOST}:${PROFILE_PORT}
+    db_url: ${PROFILE_DB_URL} 
+  test:
+    addr: localhost:${PROFILE_PORT}
+    db_url: "postgres://${PG_USER}:${PG_PASS}@$localhost:${PROFILE_DB_PORT}/${PROFILE_DB}?sslmode=disable"
+
+auth:
+  dev:
+    addr: ${AUTH_HOST}:${AUTH_PORT}
+    profile_addr: ${PROFILE_EXTERNAL_ADDR}
+    db_url: ${AUTH_DB_URL} 
+  test:
+    addr: localhost:${AUTH_PORT}
+    profile_addr: localhost:${PROFILE_PORT} 
+    db_url: postgres://${PG_USER}:${PG_PASS}@$locahost:${AUTH_DB_PORT}/${AUTH_DB}?sslmode=disable

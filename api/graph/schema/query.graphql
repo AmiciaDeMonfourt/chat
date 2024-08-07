@@ -1,0 +1,4 @@
+#query.graphql
+type Query {
+    user(identifier: UserIdentifier!): User
+}

@@ -1,14 +1,19 @@
 package domain
 
-import "time"
+import (
+	"pawpawchat/generated/proto/authpb"
+	"time"
+)
 
 type User struct {
+	ID uint64 `json:"id"`
+
 	UserID int64 `json:"user_id" gorm:"primaryKey"`
 	// Authentificate and verification information
 	Credentials UserCredentials `json:"credentials" gorm:"foreignkey:UserID;references:UserID"`
 
 	// Personal information
-	PersonalInfo UserPersonalInfo `json:"personal_info" gorm:"foreignkey:UserID;references:UserID"`
+	Biography UserBiography `json:"personal_info" gorm:"foreignkey:UserID;references:UserID"`
 
 	// Contacts information about user
 	Contact UserContactInfo `json:"contact" gorm:"foreignkey:UserID;references:UserID"`
@@ -33,7 +38,7 @@ type UserCredentials struct {
 	HashPass string `json:"-"`
 }
 
-type UserPersonalInfo struct {
+type UserBiography struct {
 	UserID     int64     `json:"user_id" gorm:"primaryKey"`
 	FirstName  string    `json:"first_name"`
 	SecondName string    `json:"second_name"`
@@ -92,4 +97,19 @@ type UserBlocked struct {
 	UserID    int64     `json:"user_id" gorm:"primaryKey"`
 	BlockedID int64     `json:"blocked_id"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+func NewUser(resp *authpb.SignUpResponse) User {
+	return User{
+		UserID: resp.GetUser().GetId(),
+		Biography: UserBiography{
+			UserID:     resp.GetUser().GetId(),
+			FirstName:  resp.GetUser().GetUserbio().GetFirstname(),
+			SecondName: resp.GetUser().GetUserbio().GetSecondname(),
+		},
+		Credentials: UserCredentials{
+			UserID: resp.GetUser().GetId(),
+			Email:  resp.GetUser().GetCredentials().GetEmail(),
+		},
+	}
 }

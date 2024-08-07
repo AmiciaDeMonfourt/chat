@@ -10,11 +10,11 @@ service Auth {
 
 message User {
     int64        id          = 1;
-    PersonalInfo userinfo    = 2;
+    Biography userinfo    = 2;
     Credentials  credentials = 3;
 }
 
-message PersonalInfo {
+message Biography {
     string firstname  = 2;
     string secondname = 3;
 }
@@ -27,7 +27,7 @@ message Credentials {
 
 message SignUpRequest {
     Credentials credentials = 1;
-    PersonalInfo userinfo    = 2;
+    Biography userinfo    = 2;
 }
 
 message SignUpResponse {

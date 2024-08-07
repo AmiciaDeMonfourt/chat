@@ -1,0 +1,31 @@
+#types/user.graphql
+type User {
+    credentials: UserCredentials!
+    biography: UserBiography!
+}
+
+type UserCredentials {
+    email: String!
+}
+
+type UserBiography {
+    firstname: String!
+    secondname: String!
+    birthday: Date
+    age: Int
+}
+
+#Helpers 
+input UserIdentifier {
+    id: ID
+    email: String
+}
+
+#For mutations
+input UserBiographyInput {
+    firstname: String
+    secondname: String
+    birthday: Date
+    age: Int
+}
+

@@ -1,0 +1,4 @@
+#mutation.graphql
+type Mutation {
+    userBiography(id: ID!, changes: UserBiographyInput!): User!
+}

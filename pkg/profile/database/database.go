@@ -6,5 +6,6 @@ import (
 )
 
 type Database interface {
-	CreateProfile(context.Context, *domain.UserPersonalInfo) (*domain.User, error)
+	CreateProfile(context.Context, *domain.UserBiography) (*domain.User, error)
+	GetProfileByID(context.Context, uint64) (*domain.User, error)
 }

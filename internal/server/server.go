@@ -6,16 +6,11 @@ import (
 )
 
 type server struct {
-	router *router.Router
+	router router.Router
 }
 
-func newServer() *server {
-	router := router.New()
-	router.Configure()
-
-	return &server{
-		router: router,
-	}
+func newServer(router router.Router) *server {
+	return &server{router}
 }
 
 func (s *server) listenAndServe(addr string) error {

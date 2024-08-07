@@ -1,26 +1,23 @@
 package routes
 
 import (
-	"pawpawchat/internal/router/routes/authroutes"
+	"net/http"
+	"pawpawchat/internal/router"
 )
 
-type Routes struct {
-	routes     []Route
-	authRoutes *authroutes.AuthRoutes
+type Routes interface {
+	Register(router.Router)
 }
 
-func New() *Routes {
-	return &Routes{
-		routes:     make([]Route, 0),
-		authRoutes: authroutes.NewAuthRoutes(),
+type RouteInfo struct {
+	Endpoint   string
+	Methods    []string
+	Handler    http.Handler
+	HandleFunc func(http.ResponseWriter, *http.Request)
+}
+
+func RegisterRoutes(router router.Router, routes []Routes) {
+	for _, route := range routes {
+		route.Register(router)
 	}
-}
-
-func (r *Routes) GetRoutes() []Route {
-	return r.routes
-}
-
-func (r *Routes) Configure() {
-	r.routes = append(r.routes, NewRoute("/signup", "POST", r.authRoutes.SignUp))
-	r.routes = append(r.routes, NewRoute("/signin", "POST", r.authRoutes.SignUp))
 }

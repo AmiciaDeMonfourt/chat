@@ -1,0 +1,42 @@
+schema:
+  - api/graph/schema/**/*.graphql
+
+exec:
+  filename: generated/graph/generated.go
+  package: graphgen
+
+model:
+  filename: generated/graph/models_gen.go
+  package: graphgen
+
+resolver:
+  layout: follow-schema
+  dir: api/graph/resolvers
+  package: resolvers
+  filename_template: "{name}.resolvers.go"
+
+autobind:
+#  - "pawpawchat/graph/model"
+
+# This section declares type mapping between the GraphQL and go type systems
+#
+# The first line in each type will be used as defaults for resolver arguments and
+# modelgen, the others will be allowed when binding to fields. Configure them to
+# your liking
+models:
+  ID:
+    model:
+      - github.com/99designs/gqlgen/graphql.ID
+      - github.com/99designs/gqlgen/graphql.Int
+      - github.com/99designs/gqlgen/graphql.Int64
+      - github.com/99designs/gqlgen/graphql.Int32
+      - github.com/99designs/gqlgen/graphql.Uint64
+  Int:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int
+      - github.com/99designs/gqlgen/graphql.Int64
+      - github.com/99designs/gqlgen/graphql.Int32
+  
+  Date:
+    model:
+      - pawpawchat/api/graph/model.Date
