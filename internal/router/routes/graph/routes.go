@@ -6,7 +6,7 @@ import (
 	"pawpawchat/generated/graphgen"
 	"pawpawchat/internal/router"
 	"pawpawchat/internal/router/routes"
-	"pawpawchat/pkg/profile/profiledb"
+	"pawpawchat/pkg/profile/repository"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -14,13 +14,13 @@ import (
 
 type GraphRoutes struct {
 	routes []routes.RouteInfo
-	prdb   profiledb.Database
+	prrepo repository.Profile
 }
 
-func NewRoutes(prdb profiledb.Database) routes.Routes {
+func NewRoutes(profileRepository repository.Profile) routes.Routes {
 	gr := &GraphRoutes{
 		routes: make([]routes.RouteInfo, 0),
-		prdb:   prdb,
+		prrepo: profileRepository,
 	}
 	gr.configure()
 	return gr
@@ -33,7 +33,7 @@ func (r *GraphRoutes) Register(router router.Router) {
 }
 
 func (r *GraphRoutes) GraphHandler() http.Handler {
-	return handler.NewDefaultServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: &resolvers.Resolver{Profiledb: r.prdb}}))
+	return handler.NewDefaultServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: &resolvers.Resolver{ProfileRepository: r.prrepo}}))
 }
 
 func (r *GraphRoutes) PlaygroundHandler() http.Handler {

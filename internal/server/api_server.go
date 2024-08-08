@@ -2,13 +2,12 @@ package server
 
 import (
 	"log"
-	"log/slog"
 	"pawpawchat/config"
 	"pawpawchat/generated/proto/authpb"
 	"pawpawchat/internal/router"
 	"pawpawchat/internal/router/routes"
 	"pawpawchat/internal/router/routes/graph"
-	"pawpawchat/pkg/profile/profiledb"
+	"pawpawchat/pkg/profile/repository/factory"
 
 	authroutes "pawpawchat/internal/router/routes/auth"
 	authsrv "pawpawchat/pkg/auth/server"
@@ -26,27 +25,17 @@ func runHTPPServer(router router.Router, addr string) {
 }
 
 func newConfiguratedRouter(envConfig config.EnvConfigurationProvider) router.Router {
-	profiledb := openProfileDB(envConfig.ProfileEnvCfg().DBURL)
+	prrepo := factory.NewPostgresRepositoryFactory().OpenProfile(envConfig.ProfileEnvCfg().DBURL, "orm")
 	authClient := newAuthClient(envConfig.AuthEnvCfg().ExtAddr)
 
 	routesmap := []routes.Routes{
-		graph.NewRoutes(profiledb),
+		graph.NewRoutes(prrepo),
 		authroutes.NewRoutes(authClient),
 	}
 
 	router := router.New()
 	routes.RegisterRoutes(router, routesmap)
 	return router
-}
-
-// openAuthDB ...
-func openProfileDB(dsn string) profiledb.Database {
-	database, err := profiledb.OpenPostgres(dsn)
-	if err != nil {
-		log.Fatal(err)
-	}
-	slog.Debug("connection with ppc_profile", "dsn", dsn)
-	return database
 }
 
 func newAuthClient(authGRPCServerAddr string) authpb.AuthClient {

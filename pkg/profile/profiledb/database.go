@@ -1,13 +1,9 @@
 package profiledb
 
-import (
-	"context"
-	"pawpawchat/internal/model/domain"
-)
+import "pawpawchat/pkg/profile/repository"
 
 type Database interface {
-	CreateProfile(context.Context, *domain.UserBiography) (*domain.User, error)
-	GetProfileByID(context.Context, uint64) (*domain.User, error)
+	Profile() repository.Profile
 }
 
 type Factory interface {

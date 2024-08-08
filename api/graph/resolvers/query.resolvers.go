@@ -18,7 +18,7 @@ func (r *queryResolver) User(ctx context.Context, identifier graphgen.UserIdenti
 		return nil, err
 	}
 
-	user, err := r.Resolver.Profiledb.GetProfileByID(ctx, id)
+	user, err := r.ProfileRepository.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
