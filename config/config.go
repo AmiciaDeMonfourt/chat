@@ -1,6 +1,13 @@
 package config
 
-import "flag"
+import (
+	"flag"
+	"log"
+	"log/slog"
+	"os"
+
+	"gopkg.in/yaml.v3"
+)
 
 var env *string
 
@@ -34,20 +41,36 @@ type EnvCfg struct {
 	DBURL   string `yaml:"dburl"`
 }
 
-// LoafConfig ...
-func LoadConfig(filepath string, reader Reader) *Config {
-	cfg := reader.ReadFile(filepath)
-	return cfg
+// GetConfiguration ...
+func LoadConfiguration(filepath string) (*Config, EnvConfigurationProvider) {
+	cfg := loadConfig(filepath)
+	configureLogger(cfg.LogLevel)
+	cfgProvider := NewConfigProvider(cfg, *env)
+
+	return cfg, cfgProvider
 }
 
-// GetConfiguration ...
-func GetConfiguration(configFilePath string) (*Config, EnvConfigurationProvider) {
-	cfgReader := NewFileConfigReader()
-	cfg := LoadConfig("config.yaml", cfgReader)
+func loadConfig(filepath string) *Config {
+	file, err := os.Open(filepath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
 
-	slogConfigurator := NewSlogConfigurator()
-	slogConfigurator.ConfigureLogger(cfg.LogLevel)
+	var cfg Config
+	if err := yaml.NewDecoder(file).Decode(&cfg); err != nil {
+		log.Fatal(err)
+	}
 
-	cfgProvider := NewConfigProvider(cfg, *env)
-	return cfg, cfgProvider
+	return &cfg
+}
+func configureLogger(logLevel string) {
+	switch logLevel {
+	case "debug":
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	case "info":
+		slog.SetLogLoggerLevel(slog.LevelInfo)
+	default:
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
 }

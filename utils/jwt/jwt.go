@@ -9,7 +9,7 @@ import (
 
 var signedKey = []byte("key")
 
-func GenerateToken(userid int64) (string, error) {
+func GenerateToken(userid uint64) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"user_id": userid})
 
 	tokenString, err := token.SignedString(signedKey)
@@ -24,7 +24,7 @@ func CheckAuth(tokenStr string) error {
 	return checkToken(tokenStr)
 }
 
-func ExtractUserId(tokenStr string) (int64, error) {
+func ExtractUserId(tokenStr string) (uint64, error) {
 	if err := checkToken(tokenStr); err != nil {
 		return 0, err
 	}
@@ -44,7 +44,7 @@ func ExtractUserId(tokenStr string) (int64, error) {
 		return 0, err
 	}
 
-	return int64(userId), nil
+	return uint64(userId), nil
 }
 
 func checkToken(tokenStr string) error {

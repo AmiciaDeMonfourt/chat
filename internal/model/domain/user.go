@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"pawpawchat/generated/proto/authpb"
 	"time"
 )
 
@@ -13,7 +12,7 @@ type User struct {
 	Credentials UserCredentials `json:"credentials" gorm:"foreignkey:UserID;references:UserID"`
 
 	// Personal information
-	Biography UserBiography `json:"personal_info" gorm:"foreignkey:UserID;references:UserID"`
+	Biography UserBiography `json:"biography" gorm:"foreignkey:UserID;references:UserID"`
 
 	// Contacts information about user
 	Contact UserContactInfo `json:"contact" gorm:"foreignkey:UserID;references:UserID"`
@@ -32,16 +31,17 @@ type User struct {
 }
 
 type UserCredentials struct {
-	UserID   int64  `json:"user_id" gorm:"primaryKey"`
-	Email    string `json:"email" gorm:"not null;unique"`
-	Password string `json:"-" gorm:"-"`
+	UserID int64 `json:"user_id" gorm:"primaryKey"`
+	// add email tag in validate
+	Email    string `json:"email" validate:"required" gorm:"not null;unique"`
+	Password string `json:"password" validate:"required" gorm:"-"`
 	HashPass string `json:"-"`
 }
 
 type UserBiography struct {
 	UserID     int64     `json:"user_id" gorm:"primaryKey"`
-	FirstName  string    `json:"first_name"`
-	SecondName string    `json:"second_name"`
+	FirstName  string    `json:"first_name" validate:"required"`
+	SecondName string    `json:"second_name" validate:"required"`
 	Birthday   time.Time `json:"birthday"`
 	Age        int       `json:"age"`
 }
@@ -99,17 +99,7 @@ type UserBlocked struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func NewUser(resp *authpb.SignUpResponse) User {
-	return User{
-		UserID: resp.GetUser().GetId(),
-		Biography: UserBiography{
-			UserID:     resp.GetUser().GetId(),
-			FirstName:  resp.GetUser().GetUserbio().GetFirstname(),
-			SecondName: resp.GetUser().GetUserbio().GetSecondname(),
-		},
-		Credentials: UserCredentials{
-			UserID: resp.GetUser().GetId(),
-			Email:  resp.GetUser().GetCredentials().GetEmail(),
-		},
-	}
+type NewUser struct {
+	Biography   UserBiography   `json:"biography"`
+	Credentials UserCredentials `json:"credentials"`
 }

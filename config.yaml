@@ -1,4 +1,4 @@
-loglevel: debug
+loglevel: info
 
 app:
   addr: 0.0.0.0:8080

@@ -6,55 +6,40 @@ import (
 	"net"
 	"pawpawchat/config"
 	"pawpawchat/generated/proto/authpb"
-	"pawpawchat/generated/proto/profilepb"
-	"pawpawchat/pkg/auth/authdb"
+	"pawpawchat/pkg/auth/client"
 	"pawpawchat/pkg/auth/server"
-	"pawpawchat/pkg/profile"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-// Start ...
-func Start() {
-	config, envConfig := config.GetConfiguration("config.yaml")
-	db := openAuthDB(envConfig.AuthEnvCfg().DBURL)
+func RunServer() {
+	cfg, envcfg := config.LoadConfiguration("config.yaml")
 
-	profileClient := newProfileClient(envConfig.ProfileEnvCfg().ExtAddr)
-	runGRPCServer(config, db, profileClient)
-}
-
-// openAuthDB ...
-func openAuthDB(dsn string) authdb.Database {
-	database, err := authdb.OpenPostgres(dsn)
+	db, err := gorm.Open(postgres.Open(envcfg.AuthEnvCfg().DBURL))
 	if err != nil {
 		log.Fatal(err)
 	}
-	slog.Debug("connection with ppc_authdb", "addr", dsn)
-	return database
-}
 
-// newProfileClient ...
-func newProfileClient(profileGRPSServerAddr string) profilepb.ProfileClient {
-	client, err := profile.NewClient(profileGRPSServerAddr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	slog.Debug("initialize profile client", "addr", profileGRPSServerAddr)
-	return client
-}
+	gRPCServer := grpc.NewServer()
+	authServer := server.MustNewAuthServiceGRPSServer(db)
+	authpb.RegisterAuthServer(gRPCServer, authServer)
 
-// runGRPCServer ...
-func runGRPCServer(cfg *config.Config, db authdb.Database, pc profilepb.ProfileClient) {
-	gRPSServer := grpc.NewServer()
-	authpb.RegisterAuthServer(gRPSServer, server.New(db, pc))
+	reflection.Register(gRPCServer)
 
 	listener, err := net.Listen("tcp", cfg.Auth.Addr)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	slog.Debug("grpc server is running", "addr", cfg.Auth.Addr)
-	if err := gRPSServer.Serve(listener); err != nil {
+	slog.Info("auth service server listening", "addr", cfg.Auth.Addr)
+	if err := gRPCServer.Serve(listener); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func NewClient(addr string) (client.AuthServiceClient, error) {
+	return client.NewAuthServiceClient(addr)
 }

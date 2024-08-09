@@ -1,17 +1,17 @@
 package auth
 
 import (
-	"pawpawchat/generated/proto/authpb"
 	"pawpawchat/internal/router"
 	"pawpawchat/internal/router/routes"
+	"pawpawchat/pkg/auth/client"
 )
 
 type AuthRoutes struct {
-	authClient authpb.AuthClient
+	authClient client.AuthServiceClient
 	routes     []routes.RouteInfo
 }
 
-func NewRoutes(authclient authpb.AuthClient) routes.Routes {
+func NewRoutes(authclient client.AuthServiceClient) routes.Routes {
 	authRoutes := &AuthRoutes{authClient: authclient, routes: make([]routes.RouteInfo, 0)}
 	authRoutes.configure()
 	return authRoutes

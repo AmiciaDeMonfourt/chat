@@ -15,7 +15,7 @@ import (
 
 // Start ...
 func Start() {
-	config, envConfig := config.GetConfiguration("config.yaml")
+	config, envConfig := config.LoadConfiguration("config.yaml")
 	profileHandler := newProfileHandler(envConfig.ProfileEnvCfg())
 	runGRPCServer(config.Profile, profileHandler)
 }

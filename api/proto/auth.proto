@@ -1,40 +1,21 @@
 syntax = "proto3";
 package auth;
 option go_package = "generated/proto/authpb";
-
+import "auth.model.proto";
 
 service Auth {
     rpc SignUp(SignUpRequest) returns (SignUpResponse); 
     rpc SignIn(SignInRequest) returns (SignInResponse);
 }
 
-message User {
-    int64        id          = 1;
-    Biography userinfo    = 2;
-    Credentials  credentials = 3;
-}
-
-message Biography {
-    string firstname  = 2;
-    string secondname = 3;
-}
-
-message Credentials {
-    string email    = 1;
-    string password = 2;
-}
-
-
 message SignUpRequest {
-    Credentials credentials = 1;
-    Biography userinfo    = 2;
+    NewUser user = 1;
 }
 
 message SignUpResponse {
     User   user        = 1;
     string tokenString = 2;
 }
-
 
 message SignInRequest {
     Credentials credentials = 1;

@@ -47,6 +47,7 @@ func generateUserBiographyFromCreateRequest(req *profilepb.CreateRequest) (*doma
 			SecondName: secondname,
 		}, nil
 	}
+
 	return nil, fmt.Errorf("missing user biography")
 }
 

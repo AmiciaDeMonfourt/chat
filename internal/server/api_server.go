@@ -3,18 +3,16 @@ package server
 import (
 	"log"
 	"pawpawchat/config"
-	"pawpawchat/generated/proto/authpb"
 	"pawpawchat/internal/router"
 	"pawpawchat/internal/router/routes"
 	"pawpawchat/internal/router/routes/graph"
-	"pawpawchat/pkg/profile/repository/factory"
+	"pawpawchat/pkg/auth"
 
 	authroutes "pawpawchat/internal/router/routes/auth"
-	authsrv "pawpawchat/pkg/auth/server"
 )
 
-func Start() {
-	config, envConfig := config.GetConfiguration("config.yaml")
+func Run() {
+	config, envConfig := config.LoadConfiguration("config.yaml")
 	router := newConfiguratedRouter(envConfig)
 
 	runHTPPServer(router, config.App.Addr)
@@ -25,24 +23,18 @@ func runHTPPServer(router router.Router, addr string) {
 }
 
 func newConfiguratedRouter(envConfig config.EnvConfigurationProvider) router.Router {
-	prrepo := factory.NewPostgresRepositoryFactory().OpenProfile(envConfig.ProfileEnvCfg().DBURL, "orm")
-	authClient := newAuthClient(envConfig.AuthEnvCfg().ExtAddr)
+	// prrepo := factory.NewPostgresRepositoryFactory().OpenProfile(envConfig.ProfileEnvCfg().DBURL, "orm")
+	authClient, err := auth.NewClient(envConfig.AuthEnvCfg().ExtAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	routesmap := []routes.Routes{
-		graph.NewRoutes(prrepo),
+		graph.NewRoutes(nil),
 		authroutes.NewRoutes(authClient),
 	}
 
 	router := router.New()
 	routes.RegisterRoutes(router, routesmap)
 	return router
-}
-
-func newAuthClient(authGRPCServerAddr string) authpb.AuthClient {
-	client, err := authsrv.NewClient(authGRPCServerAddr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return client
 }
